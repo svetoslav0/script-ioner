@@ -6,7 +6,7 @@
 * MySQL Database Server
 
 # Installation
-Go ahead and download the files or clone the repository. The first thing you need to do is to run the MySQL dump file on your MySQL server. The file is located in `sql/db_dump.sql`. Then you need to type your hostname, username and password of your Database server (lines 9, 10 and 11 of `main.js`). To run the application simply run `node main.js` from the top directory. Once you run that command the game starts and the first question appears.
+Go ahead and download the files or clone the repository. The first thing you need to do is to run the MySQL dump file on your MySQL server. The file is located in `sql/db_dump.sql`. Then you need to type your hostname, username and password of your Database server (lines 11, 12 and 13 of `main.js`). To run the application simply run `node main.js` from the top directory. Once you run that command the game starts and the first question appears.
 
 # Project Description
 The application walks through some simple steps - __Basic Configuration, The Essential Logic__
