@@ -1,5 +1,5 @@
 # Who wants to be a Script-ioner?
-'__Who wants to be a Script-ioner?__' is a simple console application build with TypeScript, JavaScript, Node.js and MySQL. The main goal is to answer five questions correctly. When the game starts a random question is selected from the database and the player should answer it by typing a number between 1 and 4 in the console. If the player gives a wrong answer, the game ends and the player loses the game.
+'__Who wants to be a Script-ioner?__' is a simple console application build with TypeScript, JavaScript, Node.js and MySQL. The main goal is to answer five questions correctly. When the game starts a random question is selected from the database and the player should answer it by typing a number between 1 and 4 in the console. If the player gives a non-existing answer a message that shows the possible answers will appear. If the player gives a wrong answer, the game ends and the player loses the game.
 
 # Requirements
 * [Node.js](https://nodejs.org/en/)
