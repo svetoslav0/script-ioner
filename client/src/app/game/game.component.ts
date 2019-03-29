@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { timer, Subscription } from 'rxjs';
 import { ApiService } from './http.service';
+import { IQuestion } from './interfaces/IQuestion';
 
 @Component({
   selector: 'app-game',
@@ -9,32 +10,30 @@ import { ApiService } from './http.service';
 })
 export class GameComponent implements OnInit {
 
-  currentQuestion;
-  answersArr;
+  questionsReceived: IQuestion[];
+  currentQuestion: IQuestion;
+  questionsAsked: number = 0;
   isCurrectAnswerCorrect = true;
   message: string = "";
   rightAnswer: string = "";
 
   timer: Subscription;
-  seconds: number = 10;
-  minutes: number = 2;
+  seconds: number = 0;
+  minutes: number = 3;
   leadingZeroSec: string = "";
   leadingZeroMin: string = "";
   
   gameWon: boolean = false;
-  gameLost: boolean = false;
-  questionCounter: string;
+  gameIsOver: boolean = false;
 
   constructor(
     private api: ApiService
   ) { }
 
   ngOnInit() {
-    this.startNewGame()
-      .then(() => {
-        this.getQuestion();
+      this.getQuestions().then(() => {
         this.startTimer();
-        this.printQuestionCounter();
+        this.loadQuestion();
       });
   }
 
@@ -73,78 +72,85 @@ export class GameComponent implements OnInit {
 
   stopTimer(): void {
     this.timer.unsubscribe();
-    this.gameLost = true;
-    this.message = "Sorry, the right answer was " + this.rightAnswer;
+    this.gameIsOver = true;
+    this.message = "Sorry, better luck next time...";
   }
 
-  printQuestionCounter(): void {
-    this.questionCounter = `Question: X/X`;
+  loadQuestion(): void {
+    this.currentQuestion = {
+      id: this.questionsReceived[this.questionsAsked].id,
+      question: this.questionsReceived[this.questionsAsked].question,
+      answers: this.questionsReceived[this.questionsAsked].answers
+    }
+
+    this.questionsAsked++;
+    this.answersShuffle();
   }
 
-  answer(answer: string) {
+  answersShuffle(): void {
+    let currentIndex: number = this.currentQuestion.answers.length;
+  
+    while (0 !== currentIndex) {
+  
+      let randomIndex: number = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+  
+      let temporaryValue: string = this.currentQuestion.answers[currentIndex].answer;
+      let temporaryId: number = +this.currentQuestion.answers[currentIndex].id;
+      
+      this.currentQuestion.answers[currentIndex] = {
+        id: this.currentQuestion.answers[randomIndex].id,
+        answer: this.currentQuestion.answers[randomIndex].answer
+      }
+
+      this.currentQuestion.answers[randomIndex] = {
+        id: temporaryId,
+        answer: temporaryValue
+      }
+    }
+  }
+
+  answer(answer: string): void {
     this.validateAnswer(answer).then(() => {
-      if(this.isCurrectAnswerCorrect) {
-        this.getQuestion();
-        console.log('correct!');
-      } else {
-        this.gameLost = true;
+      if(this.isCurrectAnswerCorrect) { // If the answer is correct
+        if (this.questionsAsked >= this.questionsReceived.length) { // If the game is won
+          this.stopTimer();
+          this.message = "Congrats! You won!";
+        } else {
+          this.loadQuestion();
+        }
+      } else { // If the answer was incorrect
         this.stopTimer();
         console.log('incorrect...');
       }
     });
   }
 
-  startNewGame () {
+  getQuestions(): Promise<IQuestion[]> {
     return new Promise((resolve, reject) => {
       this.api
-        .startNewGame()
-        .subscribe(() => {
-          console.log('Game started');
+        .reqQuestions()
+        .subscribe((data: IQuestion[]) => {
+          this.questionsReceived = data;
+          console.log(data);
           resolve();
-        })
-    })
-  }
-
-  getQuestion() {
-    return new Promise((resolve, reject) => {
-      this.api
-        .reqQuestion()
-        .subscribe((data) => {
-          if(data.hasOwnProperty('noMoreQuestions')){
-            if(data.noMoreQuestions) {
-              this.message = "No more questions";
-            }
-            resolve();
-          } else {
-            this.currentQuestion = data;
-            this.answersArr = [
-              data.answer1,
-              data.answer2,
-              data.answer3,
-              data.answer4
-            ]
-            console.log(data);
-            resolve();
-          }
         }, err => {
           console.log(err);
         })
     });
   }
 
-  validateAnswer (answer: string) {
+  validateAnswer (answerId: string) {
     return new Promise((resolve, reject) => {
       this.api
-        .validateAnswer(encodeURIComponent(answer))
+        .validateAnswer(answerId)
         .subscribe((response) => {
           if(response.isCorrect){
-            // console.log("Correct!");
             this.isCurrectAnswerCorrect = true;
             resolve();
           } else {
-            // console.log("Incorrect answer!");
             this.isCurrectAnswerCorrect = false;
-            this.rightAnswer = response.rightAnswer;
+            //this.rightAnswer = response.rightAnswer;
             resolve();
           }
         }, err => {

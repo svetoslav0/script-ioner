@@ -41,8 +41,8 @@ export class ApiService {
     )
   }
 
-  public reqQuestion (): Observable<any> {
-    let url: string = 'http://localhost:5001/question-api/';
+  public reqQuestions (): Observable<any> {
+    let url: string = 'http://localhost:5001/questions-api/';
 
     return this.http.get(url, httpOptions).pipe(
       map(this.extractData),
