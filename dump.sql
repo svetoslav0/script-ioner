@@ -98,38 +98,6 @@ INSERT INTO `answers` (`id`, `questionId`, `answer`, `isCorrect`) VALUES
 	(66, 17, 'Нещо за ядене', 0);
 /*!40000 ALTER TABLE `answers` ENABLE KEYS */;
 
--- Dumping structure for table scriptioner.answers_
-CREATE TABLE IF NOT EXISTS `answers_` (
-  `questionId` int(11) unsigned NOT NULL,
-  `a` varchar(512) DEFAULT NULL,
-  `b` varchar(512) DEFAULT NULL,
-  `c` varchar(512) DEFAULT NULL,
-  `d` varchar(512) DEFAULT NULL,
-  `correctAnswer` varchar(5) NOT NULL,
-  PRIMARY KEY (`questionId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- Dumping data for table scriptioner.answers_: ~16 rows (approximately)
-/*!40000 ALTER TABLE `answers_` DISABLE KEYS */;
-INSERT INTO `answers_` (`questionId`, `a`, `b`, `c`, `d`, `correctAnswer`) VALUES
-	(1, 'Совиньон блан', 'Каберне совиньон', 'Мускат', 'Шардоне', 'b'),
-	(2, 'Никола Вапцаров', 'Иван Вазов', 'Ран Босилек', 'Димчо Дебелянов', 'c'),
-	(3, 'Щурецът', 'Светулката', 'Сърничката', 'GPS-ът', 'b'),
-	(4, 'На рамо', 'На китката', 'Зад ухото', 'На краката', 'a'),
-	(5, 'Туристически обувки', 'Мотоциклет', 'Ютия', 'Кебапчета за скара', 'd'),
-	(6, 'Имат 6 крайника', 'Имат 3 очи', 'Нямат пръсти', 'Нямат коса', 'a'),
-	(7, 'Ванга и Ивет Лалова', 'Леда Милева и Белослава', 'Елин Пелин и дядо Добри', 'Христо Ботев и Стоичков', 'c'),
-	(8, '80 км', '40 км', '50 км', '60 км', 'd'),
-	(9, 'Представител на Евровизия', 'Двойник на президента', 'Мистър Свят', 'Митничар на годината', 'a'),
-	(10, '15', '20', '3', '6', 'b'),
-	(11, 'Цял морков', 'Нарязани варени яйца', 'Сушен грах', 'Задушение аспержи', 'b'),
-	(12, 'Море', 'Океан', 'Река', 'Блато', 'd'),
-	(13, 'Тинисист', 'Тенисист', 'Тинесист', 'Тенесист', 'b'),
-	(14, 'Ревматизъм', 'Популярност', 'Злато', 'Безсмъртие', 'c'),
-	(15, 'Кухненска маса', 'Капан за мишки', 'Тенджера за супа', 'Кулокран', 'a'),
-	(16, 'Локомотив', 'Бразилски футболист', 'Почерпен английски турист', 'Махало', 'd');
-/*!40000 ALTER TABLE `answers_` ENABLE KEYS */;
-
 -- Dumping structure for table scriptioner.questions
 CREATE TABLE IF NOT EXISTS `questions` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
