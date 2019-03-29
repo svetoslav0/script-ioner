@@ -1,0 +1,21 @@
+<div *ngIf="currentQuestion">
+  <h2>{{ leadingZeroMin }}{{ minutes }}:{{ leadingZeroSec }}{{ seconds }}</h2>
+  <h3>{{ questionCounter }}</h3>
+  <h4>{{ currentQuestion.question }}</h4>
+  
+  <div *ngIf="!gameWon">
+      <div *ngFor="let currAnswer of answersArr">
+          <button (click)="answer(currAnswer)" [disabled]="gameLost">
+              {{ currAnswer }}
+          </button>
+      </div>
+      <h5>{{ message }}</h5>
+  </div>
+  
+  <!--
+  <div *ngIf="gameLost">
+      <button (click)="ngOnInit()">Try again</button>
+  </div>
+  -->
+</div>
+
