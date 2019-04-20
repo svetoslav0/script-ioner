@@ -1,0 +1,84 @@
+Todo:
+    ☐ Implement the `Golden Question` logic
+    ☐ Implement the `Login` and `Register`
+    ☐ Create new database tables for `users` and `log` 
+    
+In case of equal points (`Golder Question`):
+    ☐ After every player answers each question, their points must be compared. If they are equal an *decide how to end the game*
+    ☐ Create new component - "Warning - you will play for a *golden question*"
+    ☐ It should disappear in 5 seconds
+    ☐ Then each of the players receives a question (in the *game* component)
+    ☐ When the first answers, *wait-to-finish* component appears
+    ☐ When the last answers, a validation must be done
+    ☐ `Case one`: one of the players answers correct, the other one answers wrong
+    ☐ `Case two`: both answer either right or wrong
+    ☐ The *golden question* should end if with the `Case one`
+    ☐ Otherwise the game should continue until that case
+
+Home:
+    ☐ Create `Home` component
+    ☐ It should contains some kind of welcome message and two buttons leading to `Login` and `Register`
+
+Database `users` table:
+    ☐ Should store -> username, password (encrypted), bestScore
+
+Database `log` table:
+    ☐ Shoud store -> gameId, userId, score
+
+Login:
+    ☐ Create `Login` component
+    ☐ A simple form -> *username*, *password*, *submit* button
+    ☐ Client sends event to server, the server validates the data and returns response
+
+Register:
+    ☐ Create `Register` component
+    ☐ Form -> *username*, *password*, *confirm password*, *submit*
+    ☐ Validation -> if the *username* already exists, if the *passwords* match
+
+***************
+* Version 2.0 *
+***************
+Todo:
+    ✔ Fix the client @done(19-04-03 13:56)
+    ✔ Create 'Player' class @done(19-04-04 10:06)
+    ✔ Create or implement UID generator @done(19-04-04 14:30)
+    ✔ Implement socket.io @done(19-04-04 10:13)
+    ✔ Create "Waiting for other player to start the game" component on the client @done(19-04-05 09:32)
+    ✔ Calculate the points depending on the left time in the end of the game @done(19-04-08 14:37)
+    ✔ Destroy the Game and the Players when the game ends @done(19-04-11 12:31)
+    ✔ Show error msg if someone has this username on `Welcome` component @done(19-04-08 15:34)
+    ✔ If someone disconnects - the other player wins @done(19-04-11 16:18)
+    ✔ Create `Show-answers` component - show given answers and right answers @done(19-04-19 16:27)
+    ✔ Create `Wait-The-Other-Player-To-Finish` component @done(19-04-10 11:14)
+    
+Issues to fix:
+    ✔ @high The Game should fire the `end-game` event when the time is over, right now it doesn't @done(19-04-17 15:48)
+    ✔ @low `Wait-to-join` component does not send data to `app-component` @done(19-04-18 14:50)
+    ✔ @high Check what is happening when the time runs out @done(19-04-19 16:27)
+
+Arch Plan:
+    ✔ The server starts, new Game is created with no players @done(19-04-04 14:28)
+    ✔ When first client connects, he joins the created game @done(19-04-04 14:28)
+    ✔ On every new connection - check if the last created game has started (or have enough players to start) ? join() : createNewGame() @done(19-04-04 14:28)
+    ✔ Decide how a game should end and when the Game obj should be destoyed @done(19-04-11 12:31)
+
+Tech Plan:
+    ✔ Server fires and starts to *listen* - a Game obj is created and pushed in the arr of games waiting the first player to join @done(19-04-04 14:28)
+    ✔ First client connects - he joins the created game, client *emits* @done(19-04-04 14:29)
+    ✔ Server *emits* the answer: `wait` for the other player or `start the game` @done(19-04-04 15:55)
+    ✔ Client waits for response: `wait` for the other player or `start the game` @done(19-04-04 16:56)
+    ✔ When the game starts - an arr of question is fetched and pushed in the arr of questions of the following game @done(19-04-05 09:33)
+    ✔ *Then* every client *emits* for the next question @done(19-04-05 16:32)
+    ✔ The server *listens* for that event and *emits* the next question @done(19-04-05 16:32)
+    ✔ The client *listens* for the requested data, takes it and uses it @done(19-04-05 16:32)
+    ✔ After the user answers: the client *emits* the answer @done(19-04-05 16:32)
+    ✔ The server *listens* for the given answer, takes it and validates it @done(19-04-05 16:32)
+    ✔ The server *emits* the result of the answers, calculates the score and adds it into the following player's score @done(19-04-05 16:33)
+    ✔ ... decide how the game should end @done(19-04-10 11:36)
+    ✔ [server] When player completes the game, checks if someone is still playing (`answeredQuestions` prop in `Player`) @done(19-04-10 11:45)
+    ✔ [server] If someone is still playing - `wait-to-finish` event *emits* @done(19-04-10 11:45)
+    ✔ [server] If no one is still playing - `show-results` event *emits* with the game data @done(19-04-10 11:45)
+    ✔ [server] Deletes the Game and the Players @done(19-04-11 12:31)
+    ✔ [client] `app-component` *listens* for the `wait-to-finish` and `show-results` events @done(19-04-11 12:31)
+    ✔ [client] If `wait-to-finish` event fires - `showWaitToFinish` prob is *true* @done(19-04-11 12:31)
+    ✔ [client] If `show-result` event fires - takes the Game data and `showResults` prob is *true* @done(19-04-11 12:31)

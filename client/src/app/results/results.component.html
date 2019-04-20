@@ -1,0 +1,16 @@
+<h1><u>Results</u></h1>
+<hr>
+<div *ngFor="let player of players">
+  {{ player.username }} <strong *ngIf="player.id == gameData.playerId">(You)</strong> <strong *ngIf="!player.isConnected">(Disconnected)</strong>: {{ player.score }}
+</div>
+<hr>
+<h1>Winner: <u>{{ players[0].username }}</u></h1>
+<h1 *ngIf="players[0].id == gameData.playerId" class="alert alert-success alert-heading">
+  You won!!
+</h1>
+<h1 *ngIf="players[0].id != gameData.playerId" class="alert alert-danger alert-heading">
+  You lost...
+</h1>
+<button class="submit" (click)="getCorrectAnswers()">
+  Show correct answers
+</button>

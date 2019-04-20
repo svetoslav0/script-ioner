@@ -34,78 +34,235 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var Repository = __importStar(require("./Repository"));
+var uuid_1 = require("uuid");
+var Game_1 = require("./game/Game");
+var Player_1 = require("./game/Player");
 var Controller = /** @class */ (function () {
-    function Controller() {
+    function Controller(factory, io) {
+        this.factory = factory;
+        this.io = io;
+        this.games = [];
+        this.gameQuestions = []; // DEPRECATED
+        this.repository = factory.createRepository();
+        this.run = this.run.bind(this);
+        this.joinEvent = this.joinEvent.bind(this);
+        this.answerEvent = this.answerEvent.bind(this);
+        this.destroyGame = this.destroyGame.bind(this);
+        this.timeOutEvent = this.timeOutEvent.bind(this);
+        this.disconnectEvent = this.disconnectEvent.bind(this);
     }
-    Controller.prototype.getRandQuestions = function (req, res) {
+    Controller.prototype.run = function () {
+        var _this = this;
+        this.io.on('connection', function (socket) {
+            console.log('Socket connection made.');
+            // 'Join the game' event  
+            socket.on('join', function (userData) {
+                _this.joinEvent(socket, userData);
+            });
+            // 'Answer' event
+            socket.on('answer', function (answer) {
+                _this.answerEvent(socket, answer);
+            });
+            // 'Time out' event 
+            socket.on('time-out', function (timeIsOver) {
+                _this.timeOutEvent(socket, timeIsOver);
+            });
+            // 'Disconnect' event
+            socket.on('disconnect', function () {
+                _this.disconnectEvent(socket);
+            });
+        });
+    };
+    Controller.prototype.joinEvent = function (socket, userData) {
+        var totalQuestions = +(process.env.QUESTIONS || 0);
+        if (this.usernameExists(userData.username)) {
+            socket.emit('username-exists', true);
+        }
+        else {
+            socket.emit('username-exists', false);
+            var playerId = socket.id;
+            var player = new Player_1.Player(playerId, userData.username);
+            var beginTime = {
+                minutes: +(process.env.GAME_MINUTES || 0),
+                seconds: +(process.env.GAME_SECONDS || 0)
+            };
+            if (this.games.length == 0) {
+                var gameId = uuid_1.v4();
+                var game = new Game_1.Game(this.factory, gameId);
+                game.addPlayer(player);
+                this.games.push(game);
+                var gameData = { gameId: gameId, playerId: playerId, totalQuestions: totalQuestions, beginTime: beginTime };
+                game.emitNewGame(this.io, socket, gameData);
+            }
+            else {
+                var lastGameCreated = this.games[this.games.length - 1];
+                var gameId = lastGameCreated.id;
+                if (lastGameCreated.players.length == 1) {
+                    lastGameCreated.addPlayer(player);
+                    var gameData = { gameId: gameId, playerId: playerId, totalQuestions: totalQuestions, beginTime: beginTime };
+                    lastGameCreated.emitStartGame(this.io, socket, gameData);
+                }
+                else {
+                    var gameId_1 = uuid_1.v4();
+                    var newGame = new Game_1.Game(this.factory, gameId_1);
+                    newGame.addPlayer(player);
+                    this.games.push(newGame);
+                    var gameData = { gameId: gameId_1, playerId: playerId, totalQuestions: totalQuestions, beginTime: beginTime };
+                    newGame.emitNewGame(this.io, socket, gameData);
+                }
+            }
+        }
+    };
+    Controller.prototype.answerEvent = function (socket, userAnswer) {
         return __awaiter(this, void 0, void 0, function () {
-            var originalAdapter, adapter, repository, questionsFetched, questionsArranged;
+            var validation, questionIndex, currentGame;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        originalAdapter = process.env.DB_ADAPTER || "";
-                        adapter = originalAdapter.charAt(0).toUpperCase() + originalAdapter.slice(1) + "Repository";
-                        repository = new Repository[adapter]();
-                        return [4 /*yield*/, repository.fetchQuestions()];
+                    case 0: return [4 /*yield*/, this.repository.validate(userAnswer.answerId)];
                     case 1:
-                        questionsFetched = _a.sent();
-                        questionsArranged = [];
-                        // forEach through fetched questions to arrange them
-                        questionsFetched.forEach(function (currentQuestion) {
-                            // check if the current question already exists in the array
-                            if (questionsArranged.filter(function (e) { return e.id == currentQuestion.questionId; }).length != 0) {
-                                // if yes -> find the question and add the new answer with its id
-                                questionsArranged
-                                    .filter(function (e) { return e.id == currentQuestion.questionId; })
-                                    .map(function (e) { return e.answers.push({
-                                    id: currentQuestion.answerId,
-                                    answer: currentQuestion.answer
-                                }); });
-                            }
-                            else {
-                                // if no -> add the new question with the new answer
-                                questionsArranged.push({
-                                    id: currentQuestion.questionId,
-                                    question: currentQuestion.question,
-                                    answers: [{
-                                            id: currentQuestion.answerId,
-                                            answer: currentQuestion.answer
-                                        }]
-                                });
+                        validation = _a.sent();
+                        questionIndex = 0;
+                        currentGame = this.games.filter(function (game) { return game.id == userAnswer.gameData.gameId; })[0];
+                        currentGame.players.filter(function (player) {
+                            return player.id == userAnswer.gameData.playerId;
+                        }).map(function (player) {
+                            questionIndex = ++player.answeredQuestions;
+                            player.addMarkedAnswer(+userAnswer.answerId);
+                            if (validation.isCorrect) {
+                                player.score += +(process.env.POINTS_PER_RIGHT_ANSWER || 0);
                             }
                         });
-                        res.send(questionsArranged);
+                        if (questionIndex >= +(process.env.QUESTIONS || 0)) {
+                            socket.emit('time-left-request');
+                            socket.on('time-left-response', function (totalSeconds) {
+                                currentGame.players
+                                    .filter(function (player) { return player.id == userAnswer.gameData.playerId; })
+                                    .map(function (player) { player.score += totalSeconds; });
+                                if (currentGame.isSomeonePlaying()) {
+                                    socket.emit('wait-to-finish', currentGame.players);
+                                }
+                                else {
+                                    currentGame.emitResults(_this.io, socket);
+                                    /**
+                                    const results: IGameResults = {
+                                        players: currentGame.players,
+                                        gameQuestions: currentGame.gameQuestions
+                                    }
+                
+                                    socket.join(userAnswer.gameData.gameId);
+                                    this.io.in(userAnswer.gameData.gameId).emit('show-results', results); */
+                                    _this.destroyGame(userAnswer.gameData.gameId);
+                                }
+                            });
+                        }
+                        else {
+                            currentGame.emitNextQuestion(socket, userAnswer.gameData.playerId);
+                        }
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Controller.prototype.validate = function (req, res) {
+    Controller.prototype.timeOutEvent = function (socket, timeIsOver) {
+        var game = this.games.filter(function (currentGame) {
+            return currentGame.players.filter(function (currentPlayer) {
+                if (currentPlayer.id == socket.id) {
+                    currentPlayer.timeOver = true;
+                    return currentPlayer;
+                }
+                return null;
+            })[0];
+        })[0];
+        game.emitResults(this.io, socket);
+        /**
+        const results: IGameResults = {
+            players: game.players,
+            gameQuestions: game.gameQuestions
+        }
+
+        socket.join(game.id);
+        this.io.in(game.id).emit('show-results', results);
+        */
+        if (game.isSomeonePlaying() == false && timeIsOver) {
+            this.destroyGame(game.id);
+        }
+    };
+    Controller.prototype.disconnectEvent = function (socket) {
+        console.log("[disconnection] User with ID: " + socket.id + " disconnected!");
+        this.disconnectPlayer(socket.id);
+        var gameFound = false;
+        for (var i = 0; i < this.games.length; i++) {
+            for (var j = 0; j < this.games[i].players.length; j++) {
+                if (this.games[i].players[j].id == socket.id) {
+                    var searchedGame = this.games[i];
+                    searchedGame.emitResults(this.io, socket);
+                    /**
+                    const quesitonsWithCorrectAnswers = this.
+                    const results: IGameResults = {
+                        players: searchedGame.players,
+                        gameQuestions: this.getCorrectAnswers()
+                    }
+
+                    socket.join(searchedGame.id);
+                    this.io.in(searchedGame.id).emit('show-results', results);
+                     */
+                    this.destroyGame(searchedGame.id);
+                    break;
+                }
+            }
+            if (gameFound) {
+                break;
+            }
+        }
+    };
+    Controller.prototype.getCorrectAnswers = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var originalAdapter, adapter, repository, isCorrect;
+            var ids;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        originalAdapter = process.env.DB_ADAPTER || "";
-                        adapter = originalAdapter.charAt(0).toUpperCase() + originalAdapter.slice(1) + "Repository";
-                        repository = new Repository[adapter]();
-                        return [4 /*yield*/, repository.validate(req.params.answerId)];
-                    case 1:
-                        isCorrect = _a.sent();
-                        res.send(isCorrect);
-                        return [2 /*return*/];
+                        ids = this.gameQuestions.map(function (q) { return q.id; });
+                        return [4 /*yield*/, this.repository.fetchQuestionsWithCorrectAnswers(ids)];
+                    case 1: return [2 /*return*/, _a.sent()];
                 }
             });
         });
+    };
+    // Destroy the game with its players
+    Controller.prototype.destroyGame = function (gameId) {
+        console.log("[destroy] Game with ID: " + gameId + " has been destroyed!");
+        var pos = this.games.map(function (e) { return e.id; }).indexOf(gameId);
+        this.games.splice(pos, 1);
+    };
+    Controller.prototype.disconnectPlayer = function (id) {
+        this.games.forEach(function (game) {
+            game.players.map(function (player) {
+                if (player.id == id) {
+                    player.isConnected = false;
+                }
+            });
+        });
+    };
+    // Chech if that username exists in the entire application
+    Controller.prototype.usernameExists = function (username) {
+        var usernameExists = false;
+        // Loop through all Games and all Player and try to find user with that name
+        for (var i = 0; i < this.games.length; i++) {
+            var currentGame = this.games[i];
+            for (var j = 0; j < currentGame.players.length; j++) {
+                var currentPlayer = currentGame.players[j];
+                if (currentPlayer.username == username) {
+                    usernameExists = true;
+                    break;
+                }
+            }
+            if (usernameExists) {
+                break;
+            }
+        }
+        return usernameExists;
     };
     return Controller;
 }());

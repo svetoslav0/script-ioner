@@ -1,7 +1,7 @@
 <div *ngIf="currentQuestion">
   <h2>{{ leadingZeroMin }}{{ minutes }}:{{ leadingZeroSec }}{{ seconds }}</h2>
-  <h3>Question: {{ questionsAsked }}/{{ questionsReceived.length }}</h3>
-  <h4 [innerHTML]="currentQuestion.question"></h4>
+  <h3>Question: {{ questionsAsked }}/{{ totalQuestions }}</h3>
+  <h4>{{ currentQuestion.question }}</h4>
   
   <div *ngIf="!gameWon">
       <div *ngFor="let currAnswer of currentQuestion.answers">
@@ -9,11 +9,4 @@
       </div>
       <h5>{{ message }}</h5>
   </div>
-  
-  <!--
-  <div *ngIf="gameLost">
-      <button (click)="ngOnInit()">Try again</button>
-  </div>
-  -->
 </div>
-

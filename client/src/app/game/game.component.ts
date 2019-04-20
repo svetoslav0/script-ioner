@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { timer, Subscription } from 'rxjs';
-import { ApiService } from './http.service';
-import { IQuestion } from './interfaces/IQuestion';
+
+import { WebSocketService } from './../web-socket.service';
+
+import { IGameData } from '../Interfaces/IGameData';
+import { IQuestion } from '../Interfaces/IQuestion';
 
 @Component({
   selector: 'app-game',
@@ -9,17 +12,22 @@ import { IQuestion } from './interfaces/IQuestion';
   styleUrls: ['./game.component.css']
 })
 export class GameComponent implements OnInit {
+  
+  @Input() username: string;
+  @Input() gameData: IGameData;
+  @Input() currentQuestion: IQuestion;
+
+  totalQuestions: number;
+  
 
   questionsReceived: IQuestion[];
-  currentQuestion: IQuestion;
-  questionsAsked: number = 0;
-  isCurrectAnswerCorrect = true;
+  questionsAsked: number = 1;
   message: string = "";
   rightAnswer: string = "";
 
   timer: Subscription;
-  seconds: number = 0;
-  minutes: number = 3;
+  seconds: number;
+  minutes: number;
   leadingZeroSec: string = "";
   leadingZeroMin: string = "";
   
@@ -27,14 +35,19 @@ export class GameComponent implements OnInit {
   gameIsOver: boolean = false;
 
   constructor(
-    private api: ApiService
+    private webSocketService: WebSocketService
   ) { }
 
   ngOnInit() {
-      this.getQuestions().then(() => {
-        this.startTimer();
-        this.loadQuestion();
-      });
+    // Set the timer when the Game begins 
+    this.seconds = this.gameData.beginTime.seconds;
+    this.minutes = this.gameData.beginTime.minutes;
+
+    // Start the timer
+    this.startTimer();
+    this.totalQuestions = this.gameData.totalQuestions;
+    this.sendTimeLeft();
+    
   }
 
   startTimer(): void {
@@ -72,90 +85,31 @@ export class GameComponent implements OnInit {
 
   stopTimer(): void {
     this.timer.unsubscribe();
-    this.gameIsOver = true;
-    this.message = "Sorry, better luck next time...";
+    if (!this.gameIsOver) {
+      this.webSocketService.emit('time-out', true);
+    }
   }
 
-  loadQuestion(): void {
-    this.currentQuestion = {
-      id: this.questionsReceived[this.questionsAsked].id,
-      question: this.questionsReceived[this.questionsAsked].question,
-      answers: this.questionsReceived[this.questionsAsked].answers
-    }
+  answer(answerId: string): void {
+    const answer = {
+      answerId,
+      gameData: this.gameData
+    };
 
     this.questionsAsked++;
-    this.answersShuffle();
-  }
 
-  answersShuffle(): void {
-    let currentIndex: number = this.currentQuestion.answers.length;
-  
-    while (0 !== currentIndex) {
-  
-      let randomIndex: number = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-  
-      let temporaryValue: string = this.currentQuestion.answers[currentIndex].answer;
-      let temporaryId: number = +this.currentQuestion.answers[currentIndex].id;
-      
-      this.currentQuestion.answers[currentIndex] = {
-        id: this.currentQuestion.answers[randomIndex].id,
-        answer: this.currentQuestion.answers[randomIndex].answer
-      }
+    this.webSocketService.emit('answer', answer);
 
-      this.currentQuestion.answers[randomIndex] = {
-        id: temporaryId,
-        answer: temporaryValue
-      }
-    }
-  }
-
-  answer(answer: string): void {
-    this.validateAnswer(answer).then(() => {
-      if(this.isCurrectAnswerCorrect) { // If the answer is correct
-        if (this.questionsAsked >= this.questionsReceived.length) { // If the game is won
-          this.stopTimer();
-          this.message = "Congrats! You won!";
-        } else {
-          this.loadQuestion();
-        }
-      } else { // If the answer was incorrect
-        this.stopTimer();
-        console.log('incorrect...');
-      }
+    this.webSocketService.listen('next-question').subscribe((question: IQuestion) => {
+      this.currentQuestion = question;
     });
   }
 
-  getQuestions(): Promise<IQuestion[]> {
-    return new Promise((resolve, reject) => {
-      this.api
-        .reqQuestions()
-        .subscribe((data: IQuestion[]) => {
-          this.questionsReceived = data;
-          console.log(data);
-          resolve();
-        }, err => {
-          console.log(err);
-        })
-    });
-  }
-
-  validateAnswer (answerId: string) {
-    return new Promise((resolve, reject) => {
-      this.api
-        .validateAnswer(answerId)
-        .subscribe((response) => {
-          if(response.isCorrect){
-            this.isCurrectAnswerCorrect = true;
-            resolve();
-          } else {
-            this.isCurrectAnswerCorrect = false;
-            //this.rightAnswer = response.rightAnswer;
-            resolve();
-          }
-        }, err => {
-          console.log(err);
-        });
-    });
+  sendTimeLeft(): void {
+    this.webSocketService.listen('time-left-request').subscribe(() => {
+      let secondsLeft = this.minutes * 60 + this.seconds;
+      this.gameIsOver = true;
+      this.webSocketService.emit('time-left-response', secondsLeft);
+    })
   }
 }

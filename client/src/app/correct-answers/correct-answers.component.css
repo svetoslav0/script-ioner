@@ -1,0 +1,27 @@
+.question {
+    display: inline-block;
+    border-bottom: 3px solid lightblue;
+    border-radius: 20px;
+    width: auto;
+    margin: 10px;
+    padding: 0px 15px 5px 15px;
+    font-weight: bold;
+}
+
+.correct {
+    display: inline-block;
+    background-color: lightgreen;
+    border: 2px solid seagreen;
+}
+
+.incorrect {
+    display: inline-block;
+    background-color: lightcoral;
+    border: 2px solid crimson;
+}
+
+.answer {
+    border-radius: 7px;
+    padding: 5px;
+    margin: 5px;
+}

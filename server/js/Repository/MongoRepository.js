@@ -13,6 +13,9 @@ var MongoRepository = /** @class */ (function () {
     MongoRepository.prototype.validate = function (answerId) {
         throw new Error("Method not implemented.");
     };
+    MongoRepository.prototype.fetchQuestionsWithCorrectAnswers = function (questionIds) {
+        throw new Error("Method not implemented.");
+    };
     return MongoRepository;
 }());
 exports.MongoRepository = MongoRepository;

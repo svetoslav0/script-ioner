@@ -24,8 +24,22 @@ var MysqlRepository = /** @class */ (function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             _this.connect();
-            var questionsToFetch = 7;
+            var questionsToFetch = +(process.env.QUESTIONS || 0);
             var query = "SELECT subq.id AS questionId, a.id AS answerId, subq.question, answer \n                FROM (SELECT id, question \n                        FROM questions ORDER BY RAND() LIMIT " + questionsToFetch + ") AS subq \n                INNER JOIN answers AS a ON a.questionId=subq.id";
+            _this.connection.query(query, function (err, rows) {
+                if (err) {
+                    throw err;
+                }
+                resolve(rows);
+            });
+        });
+    };
+    MysqlRepository.prototype.fetchQuestionsWithCorrectAnswers = function (questionIds) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            _this.connect();
+            var condidionBuilder = "questionId = " + questionIds.join(' OR questionId = ');
+            var query = "SELECT subq.id AS questionId, a.id AS answerId, subq.question, answer, isCorrect \n                        FROM (SELECT id, question FROM questions) AS subq \n                        INNER JOIN answers AS a ON a.questionId=subq.id\n                        WHERE " + condidionBuilder;
             _this.connection.query(query, function (err, rows) {
                 if (err) {
                     throw err;
@@ -54,4 +68,4 @@ var MysqlRepository = /** @class */ (function () {
     };
     return MysqlRepository;
 }());
-exports.default = MysqlRepository;
+exports.MysqlRepository = MysqlRepository;

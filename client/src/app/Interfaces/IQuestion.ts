@@ -6,5 +6,6 @@ export interface IQuestion{
 
 interface IAnswer{
     id: number,
-    answer: string
+    answer: string,
+    isCorrect?: number
 }

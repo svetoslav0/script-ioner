@@ -1,0 +1,9 @@
+<div class="username-text">Your fancy username:</div>
+<input type="text" #username class="username" (keyup.enter)="startGame(username.value)" autofocus /><br />
+<button type="submit" name="submit" class="submit" (click)="startGame(username.value)">Start Game</button>
+
+<div style="text-align: center">
+    <span *ngIf="showErrors" class="alert alert-danger" style="width: 300px">
+        {{ errorMsg }}
+    </span>
+</div>

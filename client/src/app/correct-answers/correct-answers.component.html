@@ -1,0 +1,22 @@
+<div *ngFor="let question of gameResults.gameQuestions">
+  <div class="question">
+    {{ question.question }}
+  </div><br />
+  <div *ngFor="let answer of question.answers">
+    <div class="correct answer" *ngIf="answer.isCorrect == 1; else incorrect">
+      {{ answer.answer }}
+    </div>
+    <ng-template #incorrect>
+      <div class="incorrect answer" *ngIf="givenAnswers.includes(answer.id); else regular">
+        {{ answer.answer }}
+      </div>
+    </ng-template>
+    <ng-template #regular>
+      <div class="answer">
+        {{ answer.answer }}
+      </div>
+    </ng-template>
+    
+    
+  </div>
+</div>

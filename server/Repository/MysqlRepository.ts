@@ -1,10 +1,10 @@
 import mysql from "mysql";
 
-import { RepositoryInterface } from "./interfaces/RepositoryInterface";
+import { IRepository } from "./interfaces/IRepository";
 import { IQuestionFetched } from "../interfaces/IQuestionFetched";
 import { IValidateResponse } from "../interfaces/IValidateResponse";
 
-export default class MysqlRepository implements RepositoryInterface {
+export class MysqlRepository implements IRepository {
     connection!: mysql.Connection;
 
     connect(): void {
@@ -21,11 +21,12 @@ export default class MysqlRepository implements RepositoryInterface {
             }
         });
     }    
+
     fetchQuestions(): Promise<IQuestionFetched[]> {
         return new Promise((resolve, reject) => {
             this.connect();
     
-            const questionsToFetch: number = 7;
+            const questionsToFetch: number = +(process.env.QUESTIONS || 0);
             const query: string = `SELECT subq.id AS questionId, a.id AS answerId, subq.question, answer 
                 FROM (SELECT id, question 
                         FROM questions ORDER BY RAND() LIMIT ` + questionsToFetch + `) AS subq 
@@ -41,6 +42,27 @@ export default class MysqlRepository implements RepositoryInterface {
         });
     
     }
+
+    fetchQuestionsWithCorrectAnswers(questionIds: number[]): Promise<IQuestionFetched[]> {
+        return new Promise((resolve, reject) => {
+            this.connect();
+            
+            const condidionBuilder: string = "questionId = " + questionIds.join(' OR questionId = ');
+            const query: string = `SELECT subq.id AS questionId, a.id AS answerId, subq.question, answer, isCorrect 
+                        FROM (SELECT id, question FROM questions) AS subq 
+                        INNER JOIN answers AS a ON a.questionId=subq.id
+                        WHERE ${condidionBuilder}`;
+
+            this.connection.query(query, (err: mysql.MysqlError, rows: IQuestionFetched[]) => {
+                if (err) {
+                    throw err;
+                }
+
+                resolve(rows);
+            });
+        });
+    }
+    
     validate(answerId: string): Promise<IValidateResponse> {
         return new Promise((resolve, reject) => {
             this.connect();
@@ -60,4 +82,5 @@ export default class MysqlRepository implements RepositoryInterface {
             })
         });
     }
+
 }

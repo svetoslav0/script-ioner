@@ -1,3 +1,35 @@
-<div style="text-align:center">
-    <app-game></app-game>
+<div *ngIf="app.pages.showWelcome" style="margin-top: 10%">
+  <app-welcome [settings]="settings" (settingsArranged)="gameStartHandler($event)">
+
+  </app-welcome>
+</div>
+
+<div *ngIf="app.pages.showWaitToJoin">
+  <app-wait-to-join [username]=settings.username>
+
+  </app-wait-to-join>
+</div>
+
+<div *ngIf="app.pages.showGame && gameData">
+  <app-game [username]=settings.username [currentQuestion]="question" [gameData]="gameData">
+
+  </app-game>
+</div>
+
+<div *ngIf="app.pages.showWaitToFinish && players">
+  <app-wait-to-finish [players]="players" [gameData]="gameData">
+
+  </app-wait-to-finish>
+</div>
+
+<div *ngIf="app.pages.showResults && gameData">
+  <app-results [gameData]="gameData" [players]="players" (showCorrectAnswers)="showCorrectAnswersHandler()">
+
+  </app-results>
+</div>
+
+<div *ngIf="app.pages.showCorrectAnswers">
+  <app-correct-answers [gameData]="gameData" [gameResults]="gameResults">
+
+  </app-correct-answers>
 </div>
